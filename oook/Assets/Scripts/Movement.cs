@@ -1,52 +1,51 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Movement : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 1;
-    public float jumpForce = 1;
-    private bool isGround;
-    private Rigidbody2D rigidbody2D;
-    
+    private float horizontal;
+    private float speed = 8f;
+    private float jumpingPower = 16f;
+    private bool isFacingRight = true;
 
+    [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayer;
 
+    void Update()
+    {
+        horizontal = Input.GetAxisRaw("Horizontal");
 
+        if (Input.GetButtonDown("Jump") && IsGrounded())
+        {
+            rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+        }
+
+        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+        }
+
+        Flip();
+    }
 
     private void FixedUpdate()
     {
-        transform.position += new Vector3(speed, 0, 0) * Input.GetAxis("Horizontal");
-
-        if (Input.GetAxis("Horizontal") < 0)
-        {
-            transform.localScale = new Vector3 (1, 1, 1);
-        }
-
-        if (Input.GetAxis("Horizontal") > 0)
-        {
-            transform.localScale = new Vector3(-1, 1, 1);
-        }
+        rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
     }
 
-void Update()
+    private bool IsGrounded()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isGround)
-        {
-            isGround = false;
-            Jump();
-        }
+        return Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);
     }
 
-    private void Jump()
+    private void Flip()
     {
-        rigidbody2D.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
         {
-            isGround = true;
+            isFacingRight = !isFacingRight;
+            Vector3 localScale = transform.localScale;
+            localScale.x *= -1f;
+            transform.localScale = localScale;
         }
     }
 }
